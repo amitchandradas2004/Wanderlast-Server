@@ -21,7 +21,9 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
-const JWKS = createRemoteJWKSet(new URL("http://localhost:3000/api/auth/jwks"));
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+);
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req?.headers.authorization;
@@ -43,7 +45,7 @@ const verifyToken = async (req, res, next) => {
 };
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     const db = client.db("wanderlust");
     const destinationCollection = db.collection("destinations");
@@ -60,6 +62,10 @@ async function run() {
       const result = await destinationCollection.findOne({
         _id: new ObjectId(id),
       });
+      res.json(result);
+    });
+    app.get("/featured", async (req, res) => {
+      const result =await destinationCollection.find().limit(4).toArray();
       res.json(result);
     });
     app.post("/destination", async (req, res) => {
@@ -101,7 +107,7 @@ async function run() {
       res.json(result);
     });
 
-    app.delete("/booking/:bookingId",verifyToken, async (req, res) => {
+    app.delete("/booking/:bookingId", verifyToken, async (req, res) => {
       const { bookingId } = req.params;
       const result = await bookingCollection.deleteOne({
         _id: new ObjectId(bookingId),
@@ -110,10 +116,10 @@ async function run() {
       res.json(result);
     });
 
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!",
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!",
+    // );
   } finally {
     // await client.close();
   }
